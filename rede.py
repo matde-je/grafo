@@ -4,12 +4,12 @@ matplotlib.use('TkAgg')  #Tkinter because QT wayland wasnt working (using linux)
 import matplotlib.pyplot as plt
 import folium
 import random
+import datetime
+import math
 
 class LondonNetworkGraph:
     def __init__(self):
         self.graph = nx.DiGraph() 
-        self.station = nx.DiGraph() #graph of stations
-        self.connection = nx.DiGraph() #graphs of connections
 
     def stations(self, file_path):
         with open(file_path, 'r') as file:
@@ -22,14 +22,14 @@ class LondonNetworkGraph:
                     latitude = float(data[1])
                     longitude = float(data[2])
                     name = data[3]
-                    display_name = data[4]
+                   # display_name = data[4]
                     zone = data[5]
                     total_lines = int(data[6])
                     rail = int(data[7])
 
                     #Add station (equivalent to node) to graph
                     self.graph.add_node(station_id, latitude=latitude, longitude=longitude, name=name,
-                                        display_name=display_name, zone=zone, total_lines=total_lines, rail=rail)
+                                        zone=zone, total_lines=total_lines, rail=rail)
     
     def connections(self, file_path):
         with open(file_path, 'r') as file:
@@ -78,42 +78,88 @@ class LondonNetworkGraph:
     def mean_weight(self, weight):  #peso médio das conexões (arestas)
         weights = [connection[weight] for connection in self.graph.edges.values()]
         return sum(weights) / len(weights)
-    
-    def dijkstra(self, start_station, end_station): #Dijkstra's algorithm calculates the shortest path between two stations using networkx
+
+    # def visualize(self):
+    #     # Visualização com NetworkX e Matplotlib
+    #     position = nx.spring_layout(self.graph)
+    #     nx.draw(self.graph, position, with_labels=True)
+    #     plt.show()
+
+    #     # Visualização com Folium
+    #     m = folium.Map(location=[51.5074, -0.1278], zoom_start=10)
+
+    #     # Adicionar marcadores para cada estação
+    #     for station_id, station_data in self.graph.nodes(data=True):
+    #         latitude = station_data['latitude']
+    #         longitude = station_data['longitude']
+    #         name = station_data['name']
+    #         folium.Marker([latitude, longitude], popup=name).add_to(m)
+
+    #     # Adicionar arestas ao mapa
+    #     for from_station_id, to_station_id, connection_data in self.graph.edges(data=True):
+    #         from_latitude = self.graph.nodes[from_station_id]['latitude']
+    #         from_longitude = self.graph.nodes[from_station_id]['longitude']
+    #         to_latitude = self.graph.nodes[to_station_id]['latitude']
+    #         to_longitude = self.graph.nodes[to_station_id]['longitude']
+    #         folium.PolyLine(
+    #             locations=[(from_latitude, from_longitude), (to_latitude, to_longitude)],
+    #             color='blue',
+    #             weight=2,
+    #             opacity=1
+    #         ).add_to(m)
+
+    #     # Salvar o mapa como arquivo HTML
+    #     m.save('map.html')
+        
+        
+        
+
+    def randomize_locations(self, x1, x2, y1, y2):
+        start_point = (random.uniform(x1, x2), random.uniform(y1, y2))
+        end_point = (random.uniform(x1, x2), random.uniform(y1, y2))
+        return start_point, end_point
+
+    def randomize_time(self):
+        hour = random.randint(0, 23)
+        minute = random.randint(0, 59)
+        second = random.randint(0, 59)
+        return datetime.time(hour, minute, second)
+
+    def find_nearest_station(self, point):
+        min_distance = float('inf')
+        nearest_station = None
+
+        for station_id, station_data in self.graph.nodes(data=True):
+            station_point = (station_data['latitude'], station_data['longitude'])
+            distance = self.calculate_distance(point, station_point)
+
+            if distance < min_distance:
+                min_distance = distance
+                nearest_station = station_id
+
+        return nearest_station
+
+
+    def calculate_distance(self, point1, point2):
+        x1, y1 = point1
+        x2, y2 = point2
+        distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        return distance
+
+    def shortest_path(self, x1, x2, y1, y2):
+        start_point, end_point = self.randomize_locations(x1, x2, y1, y2)
+        hour, minute, second = self.randomize_time()
+
+        # Encontre as estações mais próximas dos pontos de partida e chegada
+        start_station = self.find_nearest_station(start_point)
+        end_station = self.find_nearest_station(end_point)
+
+        # Calcule o caminho mais curto usando o algoritmo de Dijkstra do NetworkX
         shortest_path = nx.dijkstra_path(self.graph, start_station, end_station)
+
         return shortest_path
 
-    def visualize(self):
-        # Visualização com NetworkX e Matplotlib
-        position = nx.spring_layout(self.graph)
-        nx.draw(self.graph, position, with_labels=True)
-        plt.show()
 
-        # Visualização com Folium
-        m = folium.Map(location=[51.5074, -0.1278], zoom_start=10)
-
-        # Adicionar marcadores para cada estação
-        for station_id, station_data in self.graph.nodes(data=True):
-            latitude = station_data['latitude']
-            longitude = station_data['longitude']
-            name = station_data['name']
-            folium.Marker([latitude, longitude], popup=name).add_to(m)
-
-        # Adicionar arestas ao mapa
-        for from_station_id, to_station_id, connection_data in self.graph.edges(data=True):
-            from_latitude = self.graph.nodes[from_station_id]['latitude']
-            from_longitude = self.graph.nodes[from_station_id]['longitude']
-            to_latitude = self.graph.nodes[to_station_id]['latitude']
-            to_longitude = self.graph.nodes[to_station_id]['longitude']
-            folium.PolyLine(
-                locations=[(from_latitude, from_longitude), (to_latitude, to_longitude)],
-                color='blue',
-                weight=2,
-                opacity=1
-            ).add_to(m)
-
-        # Salvar o mapa como arquivo HTML
-        m.save('map.html')
 
 if __name__ == "__main__":
     lng = LondonNetworkGraph()
@@ -131,6 +177,7 @@ if __name__ == "__main__":
     lng.mean_degree()
     print("Peso médio das conexões: ")
     lng.mean_weight('distance')
+  #  lng.visualize()
+    
     print("Shortest path between two stations: ")
-    lng.dijkstra(40, 50)
-    lng.visualize()
+    lng.shortest_path(50, 10, 5, 200)
