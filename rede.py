@@ -110,9 +110,6 @@ class LondonNetworkGraph:
 
     #     # Salvar o mapa como arquivo HTML
     #     m.save('map.html')
-        
-        
-        
 
     def randomize_locations(self, x1, x2, y1, y2):
         start_point = (random.uniform(x1, x2), random.uniform(y1, y2))
@@ -130,8 +127,14 @@ class LondonNetworkGraph:
         nearest_station = None
 
         for station_id, station_data in self.graph.nodes(data=True):
-            station_point = (station_data['latitude'], station_data['longitude'])
-            distance = self.calculate_distance(point, station_point)
+            latitude = station_data.get('latitude')
+            longitude = station_data.get('longitude')
+
+            if latitude is None or longitude is None:
+                continue
+
+            station_point = (latitude, longitude)
+            distance = self.calculate_distance(point, station_point) #this point is the start point and afterwards it is the end point
 
             if distance < min_distance:
                 min_distance = distance
@@ -148,14 +151,14 @@ class LondonNetworkGraph:
 
     def shortest_path(self, x1, x2, y1, y2):
         start_point, end_point = self.randomize_locations(x1, x2, y1, y2)
-        hour, minute, second = self.randomize_time()
+        start_time = self.randomize_time()
 
         # Encontre as estações mais próximas dos pontos de partida e chegada
         start_station = self.find_nearest_station(start_point)
         end_station = self.find_nearest_station(end_point)
 
         # Calcule o caminho mais curto usando o algoritmo de Dijkstra do NetworkX
-        shortest_path = nx.dijkstra_path(self.graph, start_station, end_station)
+        shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight=start_time)
 
         return shortest_path
 
