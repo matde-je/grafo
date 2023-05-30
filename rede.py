@@ -27,7 +27,7 @@ class LondonNetworkGraph:
                     #Add station (node) to graph
                     self.graph.add_node(station_id, latitude=latitude, longitude=longitude, name=name,
                                         zone=zone, total_lines=total_lines, rail=rail)
-    
+
     def connections(self, file_path):
         with open(file_path, 'r') as file:
             next(file)
@@ -82,6 +82,8 @@ class LondonNetworkGraph:
         end_longitude = random.uniform(y1, y2)
         start_point = (start_latitude, start_longitude) #tuple of coordinates
         end_point = (end_latitude, end_longitude)
+        print(start_point)
+        print(end_point)
         return start_point, end_point
     
     def randomize_time(self):
@@ -116,37 +118,27 @@ class LondonNetworkGraph:
         start_point, end_point = self.randomize_locations(x1, x2, y1, y2)
         start_station = self.find_nearest_station(start_point)
         end_station = self.find_nearest_station(end_point)
-        while True:
+        while start_station == end_station:
+            end_point = self.randomize_locations(x1, x2, y1, y2)
             end_station = self.find_nearest_station(end_point)
-            if end_station != start_station:
-                break
-            else:
-                end_point = self.randomize_locations(x1, x2, y1, y2)[1] #para nao termos valores iguais de inicio e fim
-        short_path = nx.dijkstra_path(self.graph, start_station, end_station, weight=start_time) #dijkstra algoritmo (networkx)
-        print(start_station, end_station)
-        print(short_path)
-        return short_path, start_station, end_station
-    
-    def visualize(self, x1, x2, y1, y2):
-        path, start_station, end_station = self.shortest_path(x1, x2, y1, y2)
-        # Extract the subgraph containing the shortest path
-        path_graph = self.graph.subgraph(path)
-        # Filter nodes without positions
-        pos = {node: (path_graph.nodes[node]['latitude'], path_graph.nodes[node]['longitude'])
-        for node in path_graph.nodes()
-        if 'latitude' in path_graph.nodes[node] and 'longitude' in path_graph.nodes[node]}
-        # Draw the subgraph
-        plt.figure(figsize=(10, 10))
-        nx.draw_networkx(path_graph, pos=pos, with_labels=True, node_size=50)
-        # Draw start and end points
-        nx.draw_networkx_nodes(path_graph, pos=pos, nodelist=[start_station], node_color='red', node_size=100)
-        nx.draw_networkx_nodes(path_graph, pos=pos, nodelist=[end_station], node_color='red', node_size=100)
-        # Draw the shortest path
-        path_edges = [(path[i], path[i+1]) for i in range(len(path)-1)]
-        nx.draw_networkx_edges(path_graph, pos=pos, edgelist=path_edges, edge_color='red', width=2)
-        # Set the title and show the plot
-        plt.title('Random Path')
-        plt.show()
+        print("Start: ", start_station)
+        print("End: ", end_station)
+        shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight=start_time) #shortest path is a list of int
+        line_changes = []
+        prev_line = None
+        for i in range(len(shortest_path) - 1):
+            current_station = shortest_path[i]  #i++ in every iteration of the loop, therefore  current and next station, line and prev line also progresses
+            next_station = shortest_path[i + 1]
+            edge_data = self.graph.get_edge_data(current_station, next_station) #edge data is a dictionary with edge data
+            line = edge_data['line']
+            if line != prev_line:
+                line_changes.append(f"Change to line {line}")   #list with str and int. appending the line
+                line_changes.append(self.graph.nodes[current_station]['name'])  #appending the name of station 
+                prev_line = line
+        line_changes.append(self.graph.nodes[end_station]['name'])
+        print(f"Shortest path with line changes: {' -> '.join(line_changes)}")
+        return shortest_path, start_station, end_station
+
 
 
 if __name__ == "__main__":
