@@ -132,8 +132,8 @@ class LondonNetworkGraph:
             edge_data = self.graph.get_edge_data(current_station, next_station) #edge data is a dictionary with edge data
             line = edge_data['line']
             if line != prev_line:
+                line_changes.append(self.graph.nodes[current_station]['name']) #appending the name of station where you need to switch lines
                 line_changes.append(f"Change to line {line}")   #list with str and int. appending the line
-                line_changes.append(self.graph.nodes[current_station]['name'])  #appending the name of station 
                 prev_line = line
         line_changes.append(self.graph.nodes[end_station]['name'])
         print(f"Shortest path with line changes: {' -> '.join(line_changes)}")
@@ -160,5 +160,5 @@ if __name__ == "__main__":
   #  lng.visualize()
     
     print("Shortest path between two stations: ")
-    #lng.shortest_path(10, 35, -1,20)
-    lng.visualize(10, 35, -1,20)
+    lng.shortest_path(10, 35, -1,20)
+   # lng.visualize(10, 35, -1,20)
