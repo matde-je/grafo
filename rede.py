@@ -74,26 +74,24 @@ class LondonNetworkGraph:
     def mean_weight(self, weight):  #peso médio das conexões (edge) (distância)
         weights = [connection[weight] for connection in self.graph.edges.values()]  #connection is a dictionary with edge values, e.g, weight (distance) data
         return sum(weights) / len(weights)
-    
-    from IPython.display import display
 
     def visualize(self):
-        # Create an empty map
+        #create an empty map
         map = folium.Map(location=[51.5074, -0.1278], zoom_start=11)
-        # Add stations as markers
+        #add stations as possible destination points
         for node, data in self.graph.nodes(data=True):
             latitude = data.get('latitude')
             longitude = data.get('longitude')
             name = data.get('name')
-            # Skip stations without latitude or longitude values
+            #skip stations without latitude or longitude values
             if latitude is None or longitude is None:
                 continue
             folium.Marker([latitude, longitude], popup=name).add_to(map)
-        # Add connections as lines
+        #add connections as blue lines
         for from_station, to_station, data in self.graph.edges(data=True):
             from_data = self.graph.nodes[from_station]
             to_data = self.graph.nodes[to_station]
-            # Skip connections with missing latitude or longitude values
+            #skip connections with missing latitude or longitude values
             if 'latitude' not in from_data or 'longitude' not in from_data or 'latitude' not in to_data or 'longitude' not in to_data:
                 continue
             from_latitude = from_data['latitude']
@@ -101,7 +99,7 @@ class LondonNetworkGraph:
             to_latitude = to_data['latitude']
             to_longitude = to_data['longitude']
             folium.PolyLine([(from_latitude, from_longitude), (to_latitude, to_longitude)], color='blue').add_to(map)
-        # Display the map
+        #display the map
         display(map)
 
     def randomize_locations(self, x1, x2, y1, y2):
@@ -111,7 +109,7 @@ class LondonNetworkGraph:
         end_longitude = random.uniform(y1, y2)
         start_point = (start_latitude, start_longitude) #tuple of coordinates
         end_point = (end_latitude, end_longitude)
-        while start_point == end_point:
+        while start_point == end_point: #chosing other random locations if the start and end points are the same
             self.randomize_locations(x1, x2, y1, y2)
         print('Start point is: ', start_point, 'End point is: ', end_point) #check values
         return start_point, end_point
@@ -128,15 +126,18 @@ class LondonNetworkGraph:
         return start_time
 
     def find_nearest_station(self, point):
+        #Inicializa a menor distância como infinito
         min_distance = float('inf')
         nearest_station = None
         for station_id, station_data in self.graph.nodes(data=True): #(station_id, station_data) is a tuple. station_data is a dictionary
+            #obtém as coordenadas da estação
             latitude = station_data.get('latitude')
             longitude = station_data.get('longitude')
-            if latitude is None or longitude is None:
-                continue
+            if latitude is None or longitude is None:  
+                continue    #if latitude or longitude are non existant the for continues without doing the next statements
             station_point = (latitude, longitude)
             distance = self.calculate_distance(point, station_point)
+             #atualiza a menor distância e a estação mais próxima, se necessário
             if distance < min_distance:
                 min_distance = distance
                 nearest_station = station_id
@@ -152,12 +153,14 @@ class LondonNetworkGraph:
     def shortest_path(self, x1, x2, y1, y2):
         start_time = self.randomize_time()
         start_point, end_point = self.randomize_locations(x1, x2, y1, y2)
+        #Encontra a estação mais próxima do ponto de partida e do de destino
         start_station = self.find_nearest_station(start_point)
         end_station = self.find_nearest_station(end_point)
-        while start_station == end_station:
+        while start_station == end_station: #chosing other random locations if the start and end stations are the same
             start_point, end_point = self.randomize_locations(x1, x2, y1, y2)
             start_station = self.find_nearest_station(start_point)
             end_station = self.find_nearest_station(end_point)
+        #Calcula o caminho mais curto com base no tempo de partida e peso (pico de tempo)
         if start_time == 1:
             shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight='am_peak')  #shortest path is a list of int
         elif start_time == 2:
@@ -172,20 +175,20 @@ if __name__ == "__main__":
     lng.stations('stations.csv')
     lng.connections('connections.csv')
     print("Number of stations: ")
-    lng.n_stations()
+    print(lng.n_stations())
     print("Number of stations per zone: ")
-    lng.n_stations_zone()
+    print(lng.n_stations_zone())
     print("Number of edges in graph: ")
-    lng.n_edges()
+    print(lng.n_edges())
     print("Number of edges, in graph, per line of the tube: ")
-    lng.n_edges_line()
+    print(lng.n_edges_line())
     print("Grau médio das estações (número de conexões): ")
-    lng.mean_degree()
+    print(lng.mean_degree())
     print("Peso médio das conexões: ")
-    lng.mean_weight('distance')
-    lng.visualize()
+    print(lng.mean_weight('distance'))
     print("Shortest path between two stations: ")
     lng.shortest_path(10, 35, -1,20)
+    lng.visualize()
 
 
 #you can run current file in an interactive window if you're using vs code for example
