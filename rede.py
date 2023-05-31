@@ -4,6 +4,7 @@ import folium
 import random
 import datetime
 import math
+from IPython.display import display
 
 class LondonNetworkGraph:
     def __init__(self):
@@ -74,7 +75,7 @@ class LondonNetworkGraph:
     def mean_weight(self, weight):  #peso médio das conexões (edge) (distância)
         weights = [connection[weight] for connection in self.graph.edges.values()]  #connection is a dictionary with edge values, e.g, weight (distance) data
         return sum(weights) / len(weights)
-
+   
     def randomize_locations(self, x1, x2, y1, y2):
         start_latitude = random.uniform(x1, x2)
         start_longitude = random.uniform(y1, y2)
@@ -82,20 +83,20 @@ class LondonNetworkGraph:
         end_longitude = random.uniform(y1, y2)
         start_point = (start_latitude, start_longitude) #tuple of coordinates
         end_point = (end_latitude, end_longitude)
-        print(start_point)
-        print(end_point)
+        while start_point == end_point:
+            self.randomize_locations(x1, x2, y1, y2)
+        print('Start point is: ', start_point, 'End point is: ', end_point) #check values
         return start_point, end_point
     
     def randomize_time(self):
         hour = random.randint(0, 23)
-        minute = random.randint(0, 59)
-        second = random.randint(0, 59)
         if 7 <= hour < 10:  #am peak
             start_time = 1
         elif 10 <= hour < 16:   #inter peak
             start_time = 2
         else:
             start_time = 3 #'Off Peak'
+        print('Peak is:', start_time, '. Hour is:', hour)   #check values
         return start_time
 
     def find_nearest_station(self, point):
@@ -111,6 +112,7 @@ class LondonNetworkGraph:
             if distance < min_distance:
                 min_distance = distance
                 nearest_station = station_id
+        print('Nearest station is:', nearest_station)
         return nearest_station
 
     def calculate_distance(self, point1, point2):   #distancia euclidiana
@@ -125,31 +127,16 @@ class LondonNetworkGraph:
         start_station = self.find_nearest_station(start_point)
         end_station = self.find_nearest_station(end_point)
         while start_station == end_station:
-            end_point = self.randomize_locations(x1, x2, y1, y2)
+            start_point, end_point = self.randomize_locations(x1, x2, y1, y2)
+            start_station = self.find_nearest_station(start_point)
             end_station = self.find_nearest_station(end_point)
-        print("Start: ", start_station)
-        print("End: ", end_station)
         if start_time == 1:
             shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight='am_peak')  #shortest path is a list of int
         elif start_time == 2:
             shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight='inter_peak')   
         else:
             shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight='off_peak')
-        line_changes = []
-        prev_line = None
-        for i in range(len(shortest_path) - 1):
-            current_station = shortest_path[i]  #i++ in every iteration of the loop, therefore  current and next station, line and prev line also progresses
-            next_station = shortest_path[i + 1]
-            edge_data = self.graph.get_edge_data(current_station, next_station) #edge data is a dictionary with edge data
-            line = edge_data['line']
-            if line != prev_line:
-                line_changes.append(self.graph.nodes[current_station]['name']) #appending the name of station where you need to switch lines
-                line_changes.append(f"Change to line {line}")   #list with str and int. appending the line
-                prev_line = line
-        line_changes.append(self.graph.nodes[end_station]['name'])
-        print(f"Shortest path with line changes: {' -> '.join(line_changes)}")
-        return shortest_path, start_station, end_station
-
+        return shortest_path
 
 
 if __name__ == "__main__":
@@ -168,12 +155,8 @@ if __name__ == "__main__":
     lng.mean_degree()
     print("Peso médio das conexões: ")
     lng.mean_weight('distance')
-  #  lng.visualize()
-    
     print("Shortest path between two stations: ")
     lng.shortest_path(10, 35, -1,20)
-   # lng.visualize(10, 35, -1,20)
-   
 
-   
+
 #you can run current file in an interactive window if you're using vs code for example
