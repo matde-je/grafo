@@ -11,8 +11,8 @@ class LondonNetworkGraph:
 
     def stations(self, file_path):
         with open(file_path, 'r') as file:
-            next(file)
-            next(file)
+            next(file)  #skip line in stations.csv (header)
+            next(file)  #skip line in stations.csv (blank line)
             for line in file:
                 data = line.strip().split(',')
                 if len(data) == 8:
@@ -20,7 +20,7 @@ class LondonNetworkGraph:
                     latitude = float(data[1])
                     longitude = float(data[2])
                     name = data[3]
-                   #display_name = data[4]
+                   #display_name = data[4]  its not needed and in the csv its deformatted
                     zone = data[5]
                     total_lines = int(data[6])
                     rail = int(data[7])
@@ -54,7 +54,7 @@ class LondonNetworkGraph:
         for node in self.graph.nodes:
             if 'zone' in self.graph.nodes[node]:
                 zone = self.graph.nodes[node]['zone']       #dictionary with station zone values
-                zone_count[zone] = zone_count.get(zone, 0) + 1
+                zone_count[zone] = zone_count.get(zone, 0) + 1  #returns the value with the zone key in the dict or 0 if theres not that key in the dict. +1 to count the occurrences of that zone
         return zone_count
 
     def n_edges(self):  #number of all edges (connections)
@@ -62,17 +62,17 @@ class LondonNetworkGraph:
 
     def n_edges_line(self): #number of edges per line in london "tube" (metro)
         line_count = {}
-        for connection in self.graph.edges.values():
-            line = connection['line']
-            line_count[line] = line_count.get(line, 0) + 1
+        for connection in self.graph.edges.values():    #dictionary
+            line = connection['line']   #line is an int object
+            line_count[line] = line_count.get(line, 0) + 1  #returns the value with the line key in the dict or 0 if theres not that key in the dict. +1 to count the occurrences of that line
         return line_count
     
     def mean_degree(self):  #grau médio das estações = número de conexões 
-        degrees = [degree for _, degree in self.graph.degree()]
+        degrees = [degree for n, degree in self.graph.degree()]
         return sum(degrees) / len(degrees)
 
-    def mean_weight(self, weight):  #peso médio das conexões (arestas)
-        weights = [connection[weight] for connection in self.graph.edges.values()]
+    def mean_weight(self, weight):  #peso médio das conexões (edge) (distância)
+        weights = [connection[weight] for connection in self.graph.edges.values()]  #connection is a dictionary with edge values, e.g, weight (distance) data
         return sum(weights) / len(weights)
 
     def randomize_locations(self, x1, x2, y1, y2):
@@ -90,7 +90,13 @@ class LondonNetworkGraph:
         hour = random.randint(0, 23)
         minute = random.randint(0, 59)
         second = random.randint(0, 59)
-        return datetime.time(hour, minute, second)
+        if 7 <= hour < 10:  #am peak
+            start_time = 1
+        elif 10 <= hour < 16:   #inter peak
+            start_time = 2
+        else:
+            start_time = 3 #'Off Peak'
+        return start_time
 
     def find_nearest_station(self, point):
         min_distance = float('inf')
@@ -123,7 +129,12 @@ class LondonNetworkGraph:
             end_station = self.find_nearest_station(end_point)
         print("Start: ", start_station)
         print("End: ", end_station)
-        shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight=start_time) #shortest path is a list of int
+        if start_time == 1:
+            shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight='am_peak')  #shortest path is a list of int
+        elif start_time == 2:
+            shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight='inter_peak')   
+        else:
+            shortest_path = nx.dijkstra_path(self.graph, start_station, end_station, weight='off_peak')
         line_changes = []
         prev_line = None
         for i in range(len(shortest_path) - 1):
@@ -162,3 +173,7 @@ if __name__ == "__main__":
     print("Shortest path between two stations: ")
     lng.shortest_path(10, 35, -1,20)
    # lng.visualize(10, 35, -1,20)
+   
+
+   
+#you can run current file in an interactive window if you're using vs code for example
