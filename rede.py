@@ -1,6 +1,9 @@
 import networkx as nx
+import matplotlib.pyplot as plt
+import folium
 import random
 import math
+from IPython.display import display
 
 class LondonNetworkGraph:
     def __init__(self):
@@ -71,7 +74,36 @@ class LondonNetworkGraph:
     def mean_weight(self, weight):  #peso médio das conexões (edge) (distância)
         weights = [connection[weight] for connection in self.graph.edges.values()]  #connection is a dictionary with edge values, e.g, weight (distance) data
         return sum(weights) / len(weights)
-   
+    
+    from IPython.display import display
+
+    def visualize(self):
+        # Create an empty map
+        map = folium.Map(location=[51.5074, -0.1278], zoom_start=11)
+        # Add stations as markers
+        for node, data in self.graph.nodes(data=True):
+            latitude = data.get('latitude')
+            longitude = data.get('longitude')
+            name = data.get('name')
+            # Skip stations without latitude or longitude values
+            if latitude is None or longitude is None:
+                continue
+            folium.Marker([latitude, longitude], popup=name).add_to(map)
+        # Add connections as lines
+        for from_station, to_station, data in self.graph.edges(data=True):
+            from_data = self.graph.nodes[from_station]
+            to_data = self.graph.nodes[to_station]
+            # Skip connections with missing latitude or longitude values
+            if 'latitude' not in from_data or 'longitude' not in from_data or 'latitude' not in to_data or 'longitude' not in to_data:
+                continue
+            from_latitude = from_data['latitude']
+            from_longitude = from_data['longitude']
+            to_latitude = to_data['latitude']
+            to_longitude = to_data['longitude']
+            folium.PolyLine([(from_latitude, from_longitude), (to_latitude, to_longitude)], color='blue').add_to(map)
+        # Display the map
+        display(map)
+
     def randomize_locations(self, x1, x2, y1, y2):
         start_latitude = random.uniform(x1, x2)
         start_longitude = random.uniform(y1, y2)
@@ -151,7 +183,9 @@ if __name__ == "__main__":
     lng.mean_degree()
     print("Peso médio das conexões: ")
     lng.mean_weight('distance')
+    lng.visualize()
     print("Shortest path between two stations: ")
     lng.shortest_path(10, 35, -1,20)
+
 
 #you can run current file in an interactive window if you're using vs code for example
