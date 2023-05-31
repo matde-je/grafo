@@ -1,10 +1,6 @@
 import networkx as nx
-import matplotlib.pyplot as plt
-import folium
 import random
-import datetime
 import math
-from IPython.display import display
 
 class LondonNetworkGraph:
     def __init__(self):
@@ -157,6 +153,5 @@ if __name__ == "__main__":
     lng.mean_weight('distance')
     print("Shortest path between two stations: ")
     lng.shortest_path(10, 35, -1,20)
-
 
 #you can run current file in an interactive window if you're using vs code for example
